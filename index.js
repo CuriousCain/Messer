@@ -50,34 +50,38 @@ function authenticate(credentials){//where credentials is the user's credentials
 			if(err)
 				return console.log(err)
 			
-			var from = message.threadName
+      var senderId = message.senderID;
 
-			if(message.participantNames && message.participantNames.length > 1)
-				from = "'" + from + "'" + " (" + message.senderName + ")"
+      api.getUserInfo(senderId, (err, result) => {
+        if (err) return console.error(err);
+        var from = result[senderId].name;
+        
+        if(message.participantNames && message.participantNames.length > 1)
+          from = "'" + from + "'" + " (" + message.senderName + ")"
 
-			process.stderr.write("\007");//makes a beep
+        process.stderr.write("\007");//makes a beep
 
-			var messageBody = null
+        var messageBody = null
 
+        if(message.type != "message"){
+          return
+        }
+        else if(message.body !== undefined && message.body != ""){
+          // console.log("New message from " + from + " - " + message.body)
+          messageBody = " - " + message.body
+        } 
 
-			if(message.type != "message"){
-				return
-			}
-			else if(message.body !== undefined && message.body != ""){
-				// console.log("New message from " + from + " - " + message.body)
-				messageBody = " - " + message.body
-			} 
+        if(message.attachments.length == 0)
+          console.log("New message from " + from + (messageBody || unrenderableMessage))
+        else{
+          var attachment = message.attachments[0]//only first attachment
+          var attachmentType = attachment.type.replace(/\_/g," ")
+          console.log("New " + attachmentType + " from " + from + (messageBody || unrenderableMessage))
+        }
+        
+        lastThread = message.threadID;
 
-			if(message.attachments.length == 0)
-				console.log("New message from " + from + (messageBody || unrenderableMessage))
-			else{
-				var attachment = message.attachments[0]//only first attachment
-				var attachmentType = attachment.type.replace(/\_/g," ")
-				console.log("New " + attachmentType + " from " + from + (messageBody || unrenderableMessage))
-			}
-			
-			lastThread = message.threadID;
-
+        });
 		});
 
 		var quoteReg = /(".*?")(.*)/g
