@@ -23,5 +23,8 @@
   "preferGlobal": true,
   "bin": {
     "messer": "index.js"
+  },
+  "devDependencies": {
+    "colors": "^1.1.2"
   }
 }

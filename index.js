@@ -4,6 +4,7 @@ var login = require("facebook-chat-api");
 var repl = require('repl');
 var lastThread = null;
 var unrenderableMessage = ", unrenderable in Messer :(";
+var colors = require('colors');
 
 var api = null;
 var userTable = {};
@@ -175,13 +176,20 @@ function parseMessage(message, from) {
     messageBody = " - " + message.body;
   } 
 
-  if(message.attachments.length === 0)
-    console.log("New message from " + from + (messageBody || unrenderableMessage));
-  else{
+  if(message.attachments.length === 0) {
+    var msg = makeTimestamp() + ' ' + from + (messageBody || unrenderableMessage);
+    console.log(msg.green);
+  } else {
     var attachment = message.attachments[0]; //only first attachment
     var attachmentType = attachment.type.replace(/\_/g," ");
     console.log("New " + attachmentType + " from " + from + (messageBody || unrenderableMessage));
   }
 
   lastThread = message.threadID;
+}
+
+function makeTimestamp() {
+  var dateNow = new Date();
+  var timestamp = '[' + dateNow.getHours() + ':' + dateNow.getMinutes() + ']';
+  return timestamp;
 }
