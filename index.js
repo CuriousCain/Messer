@@ -5,6 +5,9 @@ var repl = require('repl');
 var lastThread = null;
 var unrenderableMessage = ", unrenderable in Messer :(";
 
+var api = null;
+var userTable = {};
+
 if(process.argv.length < 3){//user didn't store credentials in JSON, make them manually enter credentials
 
   //return console.log("Please specify a config JSON as your second argument!")
@@ -36,9 +39,9 @@ if(process.argv.length < 3){//user didn't store credentials in JSON, make them m
 }
 
 function authenticate(credentials){//where credentials is the user's credentials as an object, fields `email` and `password
-  login(credentials, function(err, api) {
-
+  login(credentials, function(err, _api) {
     if(err) return console.error(err);
+    api = _api;
 
     console.log("Logged in as " + credentials.email);
 
@@ -51,37 +54,24 @@ function authenticate(credentials){//where credentials is the user's credentials
         return console.log(err);
 
       var senderId = message.senderID;
+      var from = "";
 
-      api.getUserInfo(senderId, (err, result) => {
-        if (err) return console.error(err);
-        var from = result[senderId].name;
+      if(senderId in userTable) {
+        from = userTable[senderId].name;
+        parseMessage(message, from);
+      } else {
+        api.getUserInfo(senderId, (err, result) => {
+          if (err) return console.error(err);
 
-        if(message.participantNames && message.participantNames.length > 1)
-          from = "'" + from + "'" + " (" + message.senderName + ")";
+          userTable[senderId] = result[senderId];
+          from = userTable[senderId].name;
 
-        process.stderr.write("\007");//makes a beep
+          parseMessage(message, from);
+        });
+      }
 
-        var messageBody = null;
-
-        if(message.type != "message"){
-          return;
-        }
-        else if(message.body !== undefined && message.body !== ""){
-          // console.log("New message from " + from + " - " + message.body)
-          messageBody = " - " + message.body;
-        } 
-
-        if(message.attachments.length === 0)
-          console.log("New message from " + from + (messageBody || unrenderableMessage));
-        else{
-          var attachment = message.attachments[0]; //only first attachment
-          var attachmentType = attachment.type.replace(/\_/g," ");
-          console.log("New " + attachmentType + " from " + from + (messageBody || unrenderableMessage));
-        }
-
-        lastThread = message.threadID;
-      });
     });
+
 
     var quoteReg = /(".*?")(.*)/g;
     repl.start({
@@ -170,3 +160,28 @@ function authenticate(credentials){//where credentials is the user's credentials
   });
 }
 
+function parseMessage(message, from) {
+  if(message.participantNames && message.participantNames.length > 1)
+    from = "'" + from + "'" + " (" + message.senderName + ")";
+
+  process.stderr.write("\007");//makes a beep
+
+  var messageBody = null;
+
+  if(message.type != "message"){
+    return;
+  }
+  else if(message.body !== undefined && message.body !== ""){
+    messageBody = " - " + message.body;
+  } 
+
+  if(message.attachments.length === 0)
+    console.log("New message from " + from + (messageBody || unrenderableMessage));
+  else{
+    var attachment = message.attachments[0]; //only first attachment
+    var attachmentType = attachment.type.replace(/\_/g," ");
+    console.log("New " + attachmentType + " from " + from + (messageBody || unrenderableMessage));
+  }
+
+  lastThread = message.threadID;
+}
