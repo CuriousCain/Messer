@@ -76,6 +76,7 @@ function authenticate(credentials){//where credentials is the user's credentials
 
     var quoteReg = /(".*?")(.*)/g;
     repl.start({
+      prompt: '',
       ignoreUndefined: true,
       eval: function(cmd, context, filename, callback){
         var ndex = cmd.lastIndexOf("\n");
@@ -115,7 +116,7 @@ function authenticate(credentials){//where credentials is the user's credentials
                 console.log("ERROR!", err);
                 return callback(null);
               }
-              console.log("Sent message to " + to);
+              //console.log("Sent message to " + to);
               return callback(null);
             });
 
