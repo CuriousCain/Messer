@@ -138,7 +138,6 @@ function authenticate(credentials){//where credentials is the user's credentials
               return callback(null);
             }
 
-            console.log("Successfully replied!");
             return callback(null);
           });
 
