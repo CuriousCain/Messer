@@ -2,9 +2,11 @@
 
 var login = require("facebook-chat-api");
 var repl = require('repl');
+var utils = require('./utils');
 var lastThread = null;
 var unrenderableMessage = ", unrenderable in Messer :(";
 var colors = require('colors');
+var command = require('./commands');
 
 var api = null;
 var userTable = {};
@@ -46,6 +48,10 @@ function authenticate(credentials){//where credentials is the user's credentials
 
     console.log("Logged in as " + credentials.email);
 
+    command.register("help", showHelp);
+
+    console.log("Registered help command");
+
     api.setOptions({
       logLevel: "silent"
     });
@@ -84,9 +90,13 @@ function authenticate(credentials){//where credentials is the user's credentials
 
         cmd = cmd.substring(0, ndex);
 
+        var rootCmd = cmd.substring(0, cmd.indexOf(" "));
+        if (cmd.indexOf(" ") === -1) {
+          rootCmd = cmd;
+        }
 
         if(cmd.toLowerCase() == "help"){
-          showHelp();
+          command.parse(rootCmd)();
           return callback(null);
         } else if(cmd.toLowerCase().indexOf("message") === 0){
           cmd = cmd.substring("message".length).trim();
@@ -141,7 +151,10 @@ function authenticate(credentials){//where credentials is the user's credentials
             return callback(null);
           });
 
+        } else if (cmd.toLowerCase().indexOf("threads") === 0) {
+          var endIndex = cmd.substring("threads".length).trim();
 
+          api.getThreadList(0, endIndex, getThreadList);
         } else {
           console.log("Invalid command - check your syntax");
           showHelp();
@@ -150,15 +163,14 @@ function authenticate(credentials){//where credentials is the user's credentials
 
       }
     });
-
-    function showHelp(){
-      console.log("Commands:\n" + 
-          " message \"[user]\" [message]\n" +
-          " reply [message]"
-          );
-    }
-
   });
+}
+
+function showHelp(){
+  console.log("Commands:\n" + 
+      " message \"[user]\" [message]\n" +
+      " reply [message]"
+  );
 }
 
 function parseMessage(message, from) {
@@ -177,7 +189,7 @@ function parseMessage(message, from) {
   } 
 
   if(message.attachments.length === 0) {
-    var msg = makeTimestamp() + ' ' + from + (messageBody || unrenderableMessage);
+    var msg = utils.makeTimestamp() + ' ' + from + (messageBody || unrenderableMessage);
     console.log(msg.green);
   } else {
     var attachment = message.attachments[0]; //only first attachment
@@ -188,8 +200,6 @@ function parseMessage(message, from) {
   lastThread = message.threadID;
 }
 
-function makeTimestamp() {
-  var dateNow = new Date();
-  var timestamp = '[' + dateNow.getHours() + ':' + dateNow.getMinutes() + ']';
-  return timestamp;
+function getThreadList(err, arr) {
+  console.log(arr);
 }
